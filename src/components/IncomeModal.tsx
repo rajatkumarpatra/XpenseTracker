@@ -2,6 +2,10 @@ import { useState, type FormEvent } from 'react'
 import Modal from 'react-modal'
 import { useSnackbar } from 'notistack'
 
+function modalParent() {
+  return document.getElementById('root') ?? document.body
+}
+
 type IncomeModalProps = {
   isOpen: boolean
   onClose: () => void
@@ -36,6 +40,8 @@ export function IncomeModal({ isOpen, onClose, onAddIncome }: IncomeModalProps) 
     <Modal
       isOpen={isOpen}
       onRequestClose={handleClose}
+      parentSelector={modalParent}
+      portalClassName="modal-portal-root"
       className="modal-sheet"
       overlayClassName="modal-overlay"
       contentLabel="Add income"
@@ -48,7 +54,7 @@ export function IncomeModal({ isOpen, onClose, onAddIncome }: IncomeModalProps) 
         <input
           id="income-amount"
           type="number"
-          name="incomeAmount"
+          name="amount"
           placeholder="Income Amount"
           min={0}
           step="0.01"

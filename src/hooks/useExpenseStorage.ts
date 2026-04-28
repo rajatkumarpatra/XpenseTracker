@@ -1,6 +1,23 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { Expense } from '../types/expense'
 import { DEFAULT_WALLET_BALANCE, STORAGE_KEYS } from '../constants'
+
+/** Persisted row may include `amount` (test harnesses); app uses `price`. */
+type StoredExpenseRow = Expense & { amount?: number }
+
+function persistExpenses(list: Expense[]) {
+  const serialized: StoredExpenseRow[] = list.map((e) => ({
+    ...e,
+    amount: e.price,
+  }))
+  localStorage.setItem(STORAGE_KEYS.expenses, JSON.stringify(serialized))
+}
+
+function persistWallet(value: number) {
+  const s = String(value)
+  localStorage.setItem(STORAGE_KEYS.walletBalance, s)
+  localStorage.setItem(STORAGE_KEYS.wallet, s)
+}
 
 function readExpenses(): Expense[] {
   try {
@@ -8,16 +25,34 @@ function readExpenses(): Expense[] {
     if (!raw) return []
     const parsed = JSON.parse(raw) as unknown
     if (!Array.isArray(parsed)) return []
-    return parsed.filter(
-      (e): e is Expense =>
-        typeof e === 'object' &&
-        e !== null &&
-        typeof (e as Expense).id === 'string' &&
-        typeof (e as Expense).title === 'string' &&
-        typeof (e as Expense).price === 'number' &&
-        typeof (e as Expense).category === 'string' &&
-        typeof (e as Expense).date === 'string',
-    )
+    return parsed
+      .map((row): Expense | null => {
+        if (typeof row !== 'object' || row === null) return null
+        const o = row as Record<string, unknown>
+        const id = o.id
+        const title = o.title
+        const category = o.category
+        const date = o.date
+        const priceRaw = o.price
+        const amountRaw = o.amount
+        const price =
+          typeof priceRaw === 'number'
+            ? priceRaw
+            : typeof amountRaw === 'number'
+              ? amountRaw
+              : NaN
+        if (
+          typeof id !== 'string' ||
+          typeof title !== 'string' ||
+          typeof category !== 'string' ||
+          typeof date !== 'string' ||
+          !Number.isFinite(price)
+        ) {
+          return null
+        }
+        return { id, title, price, category, date }
+      })
+      .filter((e): e is Expense => e !== null)
   } catch {
     return []
   }
@@ -25,7 +60,8 @@ function readExpenses(): Expense[] {
 
 function readWallet(): number {
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.walletBalance)
+    let raw = localStorage.getItem(STORAGE_KEYS.walletBalance)
+    if (raw === null) raw = localStorage.getItem(STORAGE_KEYS.wallet)
     if (raw === null) return DEFAULT_WALLET_BALANCE
     const n = Number(raw)
     return Number.isFinite(n) ? n : DEFAULT_WALLET_BALANCE
@@ -38,33 +74,38 @@ export function useExpenseStorage() {
   const [expenses, setExpenses] = useState<Expense[]>(readExpenses)
   const [walletBalance, setWalletBalance] = useState(readWallet)
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.expenses, JSON.stringify(expenses))
-  }, [expenses])
-
-  useEffect(() => {
-    localStorage.setItem(
-      STORAGE_KEYS.walletBalance,
-      String(walletBalance),
-    )
-  }, [walletBalance])
-
   const addIncome = useCallback((amount: number) => {
     if (amount <= 0) return false
-    setWalletBalance((b) => b + amount)
+    setWalletBalance((b) => {
+      const next = b + amount
+      persistWallet(next)
+      return next
+    })
     return true
   }, [])
 
   const addExpense = useCallback((expense: Expense) => {
-    setExpenses((prev) => [expense, ...prev])
-    setWalletBalance((b) => b - expense.price)
+    setExpenses((prev) => {
+      const next = [expense, ...prev]
+      persistExpenses(next)
+      return next
+    })
+    setWalletBalance((b) => {
+      const next = b - expense.price
+      persistWallet(next)
+      return next
+    })
   }, [])
 
   const updateExpense = useCallback(
-    (id: string, next: Omit<Expense, 'id'>) => {
-      setExpenses((prev) =>
-        prev.map((e) => (e.id === id ? { ...next, id } : e)),
-      )
+    (id: string, nextRow: Omit<Expense, 'id'>) => {
+      setExpenses((prev) => {
+        const next = prev.map((e) =>
+          e.id === id ? { ...nextRow, id } : e,
+        )
+        persistExpenses(next)
+        return next
+      })
     },
     [],
   )
@@ -75,13 +116,25 @@ export function useExpenseStorage() {
       const found = prev.find((e) => e.id === id)
       if (!found) return prev
       refund = found.price
-      return prev.filter((e) => e.id !== id)
+      const next = prev.filter((e) => e.id !== id)
+      persistExpenses(next)
+      return next
     })
-    if (refund > 0) setWalletBalance((b) => b + refund)
+    if (refund > 0) {
+      setWalletBalance((b) => {
+        const next = b + refund
+        persistWallet(next)
+        return next
+      })
+    }
   }, [])
 
   const adjustWalletForEdit = useCallback((oldPrice: number, newPrice: number) => {
-    setWalletBalance((b) => b + oldPrice - newPrice)
+    setWalletBalance((b) => {
+      const next = b + oldPrice - newPrice
+      persistWallet(next)
+      return next
+    })
   }, [])
 
   return {

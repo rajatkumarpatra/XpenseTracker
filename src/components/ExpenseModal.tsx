@@ -1,6 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import Modal from 'react-modal'
 import { useSnackbar } from 'notistack'
+
+function modalParent() {
+  return document.getElementById('root') ?? document.body
+}
 import { EXPENSE_CATEGORIES } from '../constants'
 import type { Expense } from '../types/expense'
 
@@ -97,6 +101,8 @@ export function ExpenseModal({
       isOpen={isOpen}
       onAfterOpen={syncFormFromProps}
       onRequestClose={handleClose}
+      parentSelector={modalParent}
+      portalClassName="modal-portal-root"
       className="modal-sheet"
       overlayClassName="modal-overlay"
       contentLabel={mode === 'add' ? 'Add expense' : 'Edit expense'}

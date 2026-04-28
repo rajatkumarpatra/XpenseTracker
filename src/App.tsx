@@ -109,9 +109,9 @@ function ExpenseTrackerApp() {
 
         <ExpenseCharts expenses={expenses} />
 
-        <section className="history-panel" aria-labelledby="history-heading">
-          <h2 id="history-heading" className="panel-title">
-            Recent Expenses
+        <section className="history-panel" aria-labelledby="transaction-list-heading">
+          <h2 id="transaction-list-heading" className="panel-title">
+            Transaction List
           </h2>
           <ExpenseList
             expenses={expenses}

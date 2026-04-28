@@ -38,7 +38,11 @@ export function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
   }
 
   return (
-    <ul className="expense-list" aria-label="Expense history">
+    <ul
+      className="expense-list"
+      data-testid="transaction-list"
+      aria-label="Transaction list"
+    >
       {expenses.map((exp) => (
         <li key={exp.id} className="expense-row">
           <div className="expense-row-main">

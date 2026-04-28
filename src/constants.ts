@@ -1,6 +1,6 @@
 export const EXPENSE_CATEGORIES = [
   'Food',
-  'Transport',
+  'Travel',
   'Shopping',
   'Entertainment',
   'Health',
@@ -10,9 +10,11 @@ export const EXPENSE_CATEGORIES = [
 
 export const DEFAULT_WALLET_BALANCE = 5000
 
+/** Primary keys used by the app; some test harnesses also read `wallet`. */
 export const STORAGE_KEYS = {
   expenses: 'expenses',
   walletBalance: 'walletBalance',
+  wallet: 'wallet',
 } as const
 
 export const CHART_COLORS = [

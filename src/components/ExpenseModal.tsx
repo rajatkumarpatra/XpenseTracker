@@ -1,12 +1,19 @@
 import { useState, type FormEvent } from 'react'
 import Modal from 'react-modal'
 import { useSnackbar } from 'notistack'
+import { EXPENSE_CATEGORIES } from '../constants'
+import type { Expense } from '../types/expense'
 
 function modalParent() {
   return document.getElementById('root') ?? document.body
 }
-import { EXPENSE_CATEGORIES } from '../constants'
-import type { Expense } from '../types/expense'
+
+function normalizeTitle(raw: string) {
+  return raw
+    .replace(/\u00a0/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+}
 
 type ExpenseModalProps = {
   isOpen: boolean
@@ -61,7 +68,7 @@ export function ExpenseModal({
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    const t = title.trim()
+    const t = normalizeTitle(title)
     const p = Number(price)
     const c = category.trim()
     const d = date.trim()

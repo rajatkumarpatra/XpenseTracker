@@ -144,6 +144,7 @@ function ExpenseTrackerApp() {
       />
 
       <ExpenseModal
+        key={`expense-modal-${walletBalance}-${expenseModalMode}-${editingExpense?.id ?? 'new'}`}
         isOpen={expenseModalOpen}
         onClose={closeExpenseModal}
         mode={expenseModalMode}

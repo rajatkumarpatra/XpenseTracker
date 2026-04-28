@@ -9,6 +9,7 @@ function persistExpenses(list: Expense[]) {
   const serialized: StoredExpenseRow[] = list.map((e) => ({
     ...e,
     amount: e.price,
+    cost: e.price,
   }))
   localStorage.setItem(STORAGE_KEYS.expenses, JSON.stringify(serialized))
 }
@@ -39,10 +40,13 @@ function readExpenses(): Expense[] {
         const title = o.title
         const category = o.category
         const date = o.date
-        const price = toFiniteNumber(o.price)
-        const priceFromAmount = Number.isFinite(price)
-          ? price
-          : toFiniteNumber(o.amount)
+        const priceCandidates = [
+          toFiniteNumber(o.price),
+          toFiniteNumber(o.amount),
+          toFiniteNumber(o.cost),
+        ]
+        const priceFromAmount =
+          priceCandidates.find((n) => Number.isFinite(n)) ?? NaN
         if (
           id === null ||
           typeof title !== 'string' ||
@@ -109,7 +113,7 @@ export function useExpenseStorage() {
 
   const addExpense = useCallback((expense: Expense) => {
     setExpenses((prev) => {
-      const next = [expense, ...prev]
+      const next = [...prev, expense]
       persistExpenses(next)
       return next
     })

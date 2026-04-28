@@ -116,17 +116,24 @@ function ExpenseTrackerApp() {
           </div>
         </section>
 
-        <ExpenseCharts expenses={expenses} />
-
-        <section className="history-panel" aria-labelledby="transactions-heading">
-          <h2 id="transactions-heading" className="panel-title">
-            Transactions
+        <section className="expenses-card" aria-labelledby="expenses-heading">
+          <h2 id="expenses-heading" className="expenses-card-title">
+            Expenses
           </h2>
-          <ExpenseList
-            expenses={expenses}
-            onEdit={openEditExpense}
-            onDelete={handleDelete}
-          />
+          <ExpenseCharts expenses={expenses} />
+          <section
+            className="history-panel history-panel--nested"
+            aria-labelledby="transactions-heading"
+          >
+            <h3 id="transactions-heading" className="panel-title">
+              Transactions
+            </h3>
+            <ExpenseList
+              expenses={expenses}
+              onEdit={openEditExpense}
+              onDelete={handleDelete}
+            />
+          </section>
         </section>
       </main>
 

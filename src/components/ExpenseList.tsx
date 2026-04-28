@@ -7,12 +7,10 @@ type ExpenseListProps = {
   onDelete: (id: string) => void
 }
 
+/** Match wallet formatting: no thousands separators so Cypress can assert amounts like "1500" */
 function formatMoney(n: number) {
-  return n.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  })
+  const sign = n < 0 ? '-' : ''
+  return `${sign}$${Math.abs(n).toFixed(2)}`
 }
 
 function formatDisplayDate(iso: string) {

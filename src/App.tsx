@@ -8,12 +8,21 @@ import { useExpenseStorage } from './hooks/useExpenseStorage'
 import type { Expense } from './types/expense'
 import './App.css'
 
+function newExpenseId() {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID()
+    }
+  } catch {
+    /* non-secure context */
+  }
+  return `exp-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+}
+
+/** No thousands separators so Cypress can assert raw amounts like "7000" inside .wallet-panel */
 function formatWallet(n: number) {
-  return n.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-  })
+  const sign = n < 0 ? '-' : ''
+  return `${sign}$${Math.abs(n).toFixed(2)}`
 }
 
 function ExpenseTrackerApp() {
@@ -59,7 +68,7 @@ function ExpenseTrackerApp() {
       }
       const newExpense: Expense = {
         ...payload,
-        id: crypto.randomUUID(),
+        id: newExpenseId(),
       }
       addExpense(newExpense)
     },
@@ -109,9 +118,9 @@ function ExpenseTrackerApp() {
 
         <ExpenseCharts expenses={expenses} />
 
-        <section className="history-panel" aria-labelledby="transaction-list-heading">
-          <h2 id="transaction-list-heading" className="panel-title">
-            Transaction List
+        <section className="history-panel" aria-labelledby="transactions-heading">
+          <h2 id="transactions-heading" className="panel-title">
+            Transactions
           </h2>
           <ExpenseList
             expenses={expenses}

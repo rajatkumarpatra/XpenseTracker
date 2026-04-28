@@ -41,7 +41,7 @@ export function ExpenseList({ expenses, onEdit, onDelete }: ExpenseListProps) {
     <ul
       className="expense-list"
       data-testid="transaction-list"
-      aria-label="Transaction list"
+      aria-label="Transactions"
     >
       {expenses.map((exp) => (
         <li key={exp.id} className="expense-row">

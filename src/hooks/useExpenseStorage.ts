@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useLayoutEffect, useState } from 'react'
 import type { Expense } from '../types/expense'
 import { DEFAULT_WALLET_BALANCE, STORAGE_KEYS } from '../constants'
 
@@ -29,28 +29,30 @@ function readExpenses(): Expense[] {
       .map((row): Expense | null => {
         if (typeof row !== 'object' || row === null) return null
         const o = row as Record<string, unknown>
-        const id = o.id
+        const idRaw = o.id
+        const id =
+          typeof idRaw === 'string'
+            ? idRaw
+            : typeof idRaw === 'number' && Number.isFinite(idRaw)
+              ? String(idRaw)
+              : null
         const title = o.title
         const category = o.category
         const date = o.date
-        const priceRaw = o.price
-        const amountRaw = o.amount
-        const price =
-          typeof priceRaw === 'number'
-            ? priceRaw
-            : typeof amountRaw === 'number'
-              ? amountRaw
-              : NaN
+        const price = toFiniteNumber(o.price)
+        const priceFromAmount = Number.isFinite(price)
+          ? price
+          : toFiniteNumber(o.amount)
         if (
-          typeof id !== 'string' ||
+          id === null ||
           typeof title !== 'string' ||
           typeof category !== 'string' ||
           typeof date !== 'string' ||
-          !Number.isFinite(price)
+          !Number.isFinite(priceFromAmount)
         ) {
           return null
         }
-        return { id, title, price, category, date }
+        return { id, title, price: priceFromAmount, category, date }
       })
       .filter((e): e is Expense => e !== null)
   } catch {
@@ -70,9 +72,30 @@ function readWallet(): number {
   }
 }
 
+function toFiniteNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string') {
+    const n = Number(value)
+    return Number.isFinite(n) ? n : NaN
+  }
+  return NaN
+}
+
 export function useExpenseStorage() {
   const [expenses, setExpenses] = useState<Expense[]>(readExpenses)
   const [walletBalance, setWalletBalance] = useState(readWallet)
+
+  useLayoutEffect(() => {
+    if (localStorage.getItem(STORAGE_KEYS.expenses) === null) {
+      persistExpenses([])
+    }
+    if (
+      localStorage.getItem(STORAGE_KEYS.walletBalance) === null &&
+      localStorage.getItem(STORAGE_KEYS.wallet) === null
+    ) {
+      persistWallet(DEFAULT_WALLET_BALANCE)
+    }
+  }, [])
 
   const addIncome = useCallback((amount: number) => {
     if (amount <= 0) return false
